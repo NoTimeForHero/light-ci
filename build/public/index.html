@@ -36,6 +36,7 @@
 
             <div class="form-group mt-4">
                 <span class="switch">
+                    <button class="btn btn-primary mr-4" @click="refresh()">Обновить</button>
                     <input type="checkbox" class="switch" id="switch-normal" v-model="isRefresh">
                     <label for="switch-normal">Обновлять автоматически</label>
                 </span>
@@ -60,12 +61,12 @@
                 </li>
             </ul>
 
-            <table class="table mt-4" v-if="logs">
+            <table class="table mt-4" v-if="logs && page === 'logs'">
                 <thead>
                     <tr>
                         <th>Проект</th>
                         <th>ID билда</th>
-                        <th>Создан</th>
+                        <th>Обновлён</th>
                         <th>Время выполнения: </td>                        
                         <td>Результат</td>
                     </tr>
@@ -77,8 +78,8 @@
                             <a href="javascript:void(0);" @click="showBuild(build,true)">{{build.build_id}}</a>
                         </td>
                         <td v-tippy="{ placement : 'top',  arrow: true }"
-                            :content="build.date|fullDate">
-                            {{build.date|fromNow}}
+                            :content="build.updated|fullDate">
+                            {{build.updated|fromNow}}
                         </td>
                         <td>{{build.elapsed/1000}} секунд</td>                        
                         <td>
@@ -88,7 +89,7 @@
                 </tbody>
             </table>
 
-            <table class="table mt-4" v-if="build">
+            <table class="table mt-4" v-if="build && page === 'build'">
                 <tbody>
                     <tr>
                         <th>Проект:</td>
@@ -105,12 +106,19 @@
                         <td>
                     </tr>
                     <tr>
-                        <th>Был обновлён: </td>
+                        <th>Создан: </td>
                         <td v-tippy="{ placement : 'top',  arrow: true }"
-                            :content="build.date|fullDate">
-                            {{build.date|fromNow}}
+                            :content="build.created|fullDate">
+                            {{build.created|fromNow}}
                         </td>
                     </tr>
+                    <tr>
+                        <th>Обновлён: </td>
+                        <td v-tippy="{ placement : 'top',  arrow: true }"
+                            :content="build.updated|fullDate">
+                            {{build.updated|fromNow}}
+                        </td>
+                    </tr>                    
                     <tr v-if="build.elapsed">
                         <th>Время выполнения: </td>
                         <td>{{build.elapsed/1000}} секунд</td>
@@ -181,6 +189,7 @@
             ];
             const formatterRelative = new Intl.RelativeTimeFormat(locale);
             function fromNow(inputTime) {
+                if (isNaN(inputTime)) return "Неизвестно";                
                 const time = Math.floor(Math.abs(Date.now() - inputTime) / 1024);
                 for (let interval of time_intervals) {
                     if (time < interval.max * interval.seconds) {
@@ -224,13 +233,14 @@
                 isRefresh: false,
                 builds: null,
                 build: null,
-                logs: null
+                logs: null,
+                page: null
             },
             watch: {
                 isRefresh(value) {
                     clearInterval(this.timerRefresh);
                     if (value) {
-                        this.timerRefresh = setInterval(() => this.loadBuilds(), 1000);
+                        this.timerRefresh = setInterval(() => this.refresh(), 1000);
                     }
                 }
             },
@@ -246,21 +256,30 @@
                     this.builds = await fetch("/last-builds.json").then(x => x.json());
                     this.build = this.builds?.[this.build?.name];
                 },
+                async loadLogs() {
+                    this.logs = await fetch('/logs.json').then(x => x.json());                    
+                },
                 showBuild(build, resetTimer=false) {
-                    this.logs = null;                    
                     this.build = build;
                     if (resetTimer) this.isRefresh = false;
+                    this.page = 'build';
                 },
                 async showLogs() {
                     this.build = null;
-                    this.logs = await fetch('/logs.json').then(x => x.json());
+                    this.page = 'logs';
+                },
+                async refresh() {
+                    await this.loadBuilds();
+                    await this.loadLogs();
+                    this.$forceUpdate();
                 }
             },
             async mounted() {             
                 this.BUILD_STATUS = BUILD_STATUS;
-                await this.loadBuilds();
+                await this.refresh();
                 this.isLoading = false;
-                if (this.builds) this.build = Object.values(this.builds)?.[0];
+                if (this.builds) this.build = Object.values(this.builds)?.[0];                
+                this.page = 'build';                
             }
         });
     </script>

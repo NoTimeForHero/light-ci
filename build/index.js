@@ -59,25 +59,34 @@ app.post('/project/:project', (req, res) => {
 
 	const build_id = nanoid();
 	const dateStart = Date.now();
-	builds[project] = {name: project, build_id, status: BUILD_STATUS.processing, date: dateStart, can_build: false, logs: {
+	builds[project] = {
+		name: project,
+		build_id,
+		status: BUILD_STATUS.processing,
+		created: dateStart,
+		updated: dateStart,
+		can_build: false, logs: {
 		stdout: [], stderr: [], error: []
 	}}
 
 	const process = child.spawn(script);
 	process.on('error', error => {
+		builds[project].updated = Date.now();
 		builds[project].logs.stderr.push(error.toString());			
 	});
 	process.stdout.on('data', (data) => {
+		builds[project].updated = Date.now();		
 		builds[project].logs.stdout.push(data.toString());
 	})
 	process.stderr.on('data', (data) => {
+		builds[project].updated = Date.now();
 		builds[project].logs.stderr.push(data.toString());
 	})		
 	process.on('close', (exit_code) => {
 		builds[project].logs.stdout.push(`** Spawned process exited with code ${exit_code} ***`);
-		const dateEnd = Date.now();
-		const elapsed = dateEnd - dateStart;
-		Object.assign(builds[project], {status: BUILD_STATUS.completed, dateEnd, elapsed, exit_code, can_build: true });
+		const updated = Date.now();
+		const elapsed = updated - dateStart;
+		Object.assign(builds[project], {status: BUILD_STATUS.completed, updated, elapsed, exit_code, can_build: true });
 		if (builds[project]) build_logs[build_id] = deep_copy(builds[project]);				
 	});
 })
