@@ -66,10 +66,13 @@
                     <tr>
                         <th class="align-middle">Статус: </td>
                         <td>
-                            <div class="alert-warning p-2" v-if="build.status === 'PROCESSING'">
+                            <div class="alert-secondary p-2" v-if="build.status === BUILD_STATUS.ready">
+                                Готово к запуску
+                            </div>                            
+                            <div class="alert-warning p-2" v-if="build.status === BUILD_STATUS.processing">
                                 Выполняется
                             </div>
-                            <template v-if="build.status === 'COMPLETED'">
+                            <template v-if="build.status === BUILD_STATUS.completed">
                                 <div v-if="build.exit_code == 0" class="alert-success p-2">Завершено</div>
                                 <div v-else class="alert-danger p-2">Ошибка</div>
                             </template>
@@ -109,12 +112,12 @@
                         <tr>
                             <td colspan="2">{{build.logs.err || "Не найдены"}}</td>
                         </tr>
-                        <tr>
-                            <td colspan="2">
-                                <button class="btn btn-warning" @click="rebuild(build.name)">Пересобрать</button>
-                            </td>
-                        </tr>
                     </template>
+                    <tr v-if="build.can_build">
+                        <td colspan="2">
+                            <button class="btn btn-warning" @click="rebuild(build.name)">Пересобрать</button>
+                        </td>
+                    </tr>                    
                 </tbody>
             </table>
             <div v-else>
@@ -127,6 +130,9 @@
     </div>
 
     <script type="text/javascript">
+
+        const BUILD_STATUS = {"ready": 1, "processing": 2, "completed": 3};    
+    
         ((locale) => {
             // Библиотеки вроде Moment.JS/Date-FNS/Day.js не умеют подгружать модули (например русскую локаль) без сборщика
             // Поэтому пришлось писать подобный костыль
@@ -203,6 +209,7 @@
                 }
             },
             async mounted() {             
+                this.BUILD_STATUS = BUILD_STATUS;
                 await this.loadBuilds();
                 this.isLoading = false;
                 if (this.builds) this.selected = Object.keys(this.builds)?.[0];
