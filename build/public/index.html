@@ -52,30 +52,56 @@
         <div class="row mt-4" v-if="builds">
 
             <ul class="nav nav-tabs">
+                <li class="nav-item">
+                    <a class="nav-link btn-primary" href="javascript:void(0)" @click="showLogs">Логи</a>
+                </li>                
                 <li class="nav-item" v-for="(build,name,index) in builds">
-                    <a class="nav-link" :class="isActive(name)" @click="() => selected = name" href="#">{{name}}</a>
+                    <a class="nav-link" :class="isActive(build.build_id)" @click="showBuild(build)" href="javascript:void(0)">{{name}}</a>
                 </li>
             </ul>
 
-            <table class="table mt-4" v-if="selected && build">
+            <table class="table mt-4" v-if="logs">
+                <thead>
+                    <tr>
+                        <th>Проект</th>
+                        <th>ID билда</th>
+                        <th>Создан</th>
+                        <th>Время выполнения: </td>                        
+                        <td>Результат</td>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr v-for="build in logs">
+                        <td>{{build.name}}</td>
+                        <td>
+                            <a href="javascript:void(0);" @click="showBuild(build,true)">{{build.build_id}}</a>
+                        </td>
+                        <td v-tippy="{ placement : 'top',  arrow: true }"
+                            :content="build.date|fullDate">
+                            {{build.date|fromNow}}
+                        </td>
+                        <td>{{build.elapsed/1000}} секунд</td>                        
+                        <td>
+                            <build-status :build="build" :status_list="BUILD_STATUS" />
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <table class="table mt-4" v-if="build">
                 <tbody>
                     <tr>
                         <th>Проект:</td>
                         <td>{{build.name}}</td>
                     </tr>
                     <tr>
+                        <th>ID билда:</td>
+                        <td>{{build.build_id}}</td>
+                    </tr>                    
+                    <tr>
                         <th class="align-middle">Статус: </td>
                         <td>
-                            <div class="alert-secondary p-2" v-if="build.status === BUILD_STATUS.ready">
-                                Готово к запуску
-                            </div>                            
-                            <div class="alert-warning p-2" v-if="build.status === BUILD_STATUS.processing">
-                                Выполняется
-                            </div>
-                            <template v-if="build.status === BUILD_STATUS.completed">
-                                <div v-if="build.exit_code == 0" class="alert-success p-2">Завершено</div>
-                                <div v-else class="alert-danger p-2">Ошибка</div>
-                            </template>
+                            <build-status :build="build" :status_list="BUILD_STATUS">
                         <td>
                     </tr>
                     <tr>
@@ -120,7 +146,7 @@
                     </tr>                    
                 </tbody>
             </table>
-            <div v-else>
+            <div v-if="!builds">
                 <h2>Нет проектов для отображения!</h2>
             </div>
 
@@ -131,7 +157,8 @@
 
     <script type="text/javascript">
 
-        const BUILD_STATUS = {"ready": 1, "processing": 2, "completed": 3};    
+        const wait = (timeout) => new Promise(resolve => setTimeout(resolve, timeout));    
+        BUILD_STATUS = {"ready": 1, "processing": 2, "completed": 3};    
     
         ((locale) => {
             // Библиотеки вроде Moment.JS/Date-FNS/Day.js не умеют подгружать модули (например русскую локаль) без сборщика
@@ -172,7 +199,23 @@
         Vue.filter('fromNow', value => DateTimeHelper.fromNow(value));
         Vue.filter('fullDate', value => DateTimeHelper.fullDate(value));
 
-        const wait = (timeout) => new Promise(resolve => setTimeout(resolve, timeout));
+        Vue.component('build-status', {
+            props: ['build', 'status_list'],
+            template: `
+                <span>
+                    <div class="alert-secondary p-2" v-if="build.status === status_list.ready">
+                        Готово к запуску
+                    </div>                            
+                    <div class="alert-warning p-2" v-if="build.status === status_list.processing">
+                        Выполняется
+                    </div>
+                    <template v-if="build.status === status_list.completed">
+                        <div v-if="build.exit_code == 0" class="alert-success p-2">Завершено</div>
+                        <div v-else class="alert-danger p-2">Ошибка</div>
+                    </template>            
+                </span>
+            `
+        });
 
         window.appVue = new Vue({
             el: "#app",
@@ -180,13 +223,8 @@
                 isLoading: true,
                 isRefresh: false,
                 builds: null,
-                selected: null,
-                selectedTitle: null,
-            },
-            computed: {
-                build() {
-                    return this.builds?.[this.selected];
-                }
+                build: null,
+                logs: null
             },
             watch: {
                 isRefresh(value) {
@@ -197,8 +235,8 @@
                 }
             },
             methods: {
-                isActive(title) {
-                    return this.selected === title ? "active" : "";
+                isActive(id) {
+                    return this.build?.build_id === id ? "active" : "";
                 },
                 async rebuild(title) {
                     await fetch(`/project/${title}`, { method: "POST" });
@@ -206,13 +244,23 @@
                 },
                 async loadBuilds() {
                     this.builds = await fetch("/last-builds.json").then(x => x.json());
+                    this.build = this.builds?.[this.build?.name];
+                },
+                showBuild(build, resetTimer=false) {
+                    this.logs = null;                    
+                    this.build = build;
+                    if (resetTimer) this.isRefresh = false;
+                },
+                async showLogs() {
+                    this.build = null;
+                    this.logs = await fetch('/logs.json').then(x => x.json());
                 }
             },
             async mounted() {             
                 this.BUILD_STATUS = BUILD_STATUS;
                 await this.loadBuilds();
                 this.isLoading = false;
-                if (this.builds) this.selected = Object.keys(this.builds)?.[0];
+                if (this.builds) this.build = Object.values(this.builds)?.[0];
             }
         });
     </script>

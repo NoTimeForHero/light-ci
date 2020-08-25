@@ -4,12 +4,16 @@ const fs = require('fs');
 const util = require('util');
 const app = express();
 const port = 3000;
+const { nanoid } = require('nanoid');
 
 const child = require('child_process');
 
 let builds = {};
+let build_logs = {};
 
 let BUILD_STATUS = {"ready": 1, "processing": 2, "completed": 3};
+
+const deep_copy = (source) => JSON.parse(JSON.stringify(source));
 
 if (!fs.existsSync('temp')) fs.mkdirSync('temp');
 
@@ -18,6 +22,7 @@ app.use(express.static('public'));
 app.get('/', (_, res) => res.sendFile('public/index.html'));
 
 app.get('/last-builds.json', (_, res) => res.json(builds));
+app.get('/logs.json', (_, res) => res.json(build_logs));
 
 fs.readdir('/app/config/', (err, files) => {
 	if (err) {
@@ -27,8 +32,9 @@ fs.readdir('/app/config/', (err, files) => {
 	files.forEach(project => fs.exists(`/app/config/${project}/build.sh`, exists => {
 		if (!exists) return;
 		console.log("Found a build project: " + project);		
+		const build_id = nanoid();		
 		const dateStart = Date.now();
-		builds[project] = {name: project, status: BUILD_STATUS.ready, date: dateStart, can_build: true};
+		builds[project] = {name: project, build_id, status: BUILD_STATUS.ready, date: dateStart, can_build: true};
 	}));
 });
 
@@ -51,8 +57,9 @@ app.post('/project/:project', (req, res) => {
 
 	res.send("ACCEPTED!");
 
+	const build_id = nanoid();
 	const dateStart = Date.now();
-	builds[project] = {name: project, status: BUILD_STATUS.processing, date: dateStart, can_build: false, logs: {
+	builds[project] = {name: project, build_id, status: BUILD_STATUS.processing, date: dateStart, can_build: false, logs: {
 		stdout: [], stderr: [], error: []
 	}}
 
@@ -71,6 +78,7 @@ app.post('/project/:project', (req, res) => {
 		const dateEnd = Date.now();
 		const elapsed = dateEnd - dateStart;
 		Object.assign(builds[project], {status: BUILD_STATUS.completed, dateEnd, elapsed, exit_code, can_build: true });
+		if (builds[project]) build_logs[build_id] = deep_copy(builds[project]);				
 	});
 })
 
