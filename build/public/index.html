@@ -1,0 +1,224 @@
+<!doctype html>
+
+<html lang="ru">
+
+<head>
+    <meta charset="utf-8">
+    <title>Light CI</title>
+    <meta name="author" content="NoTimeForHero">
+
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
+        integrity="sha384-JcKb8q3iqJ61gNV9KGb8thSsNjpSL0n8PARn9HuZOnIxN0hoP+VmmDGMN5t9UJ0Z" crossorigin="anonymous">
+
+    <!-- Версия для отладки: -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/vue/2.6.12/vue.js" integrity="sha512-YXLGLsQBiwHPHLCAA9npZWhADUsHECjkZ71D1uzT2Hpop82/eLnmFb6b0jo8pK4T0Au0g2FETrRJNblF/46ZzQ==" crossorigin="anonymous"></script>
+    
+    <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/vue/2.6.12/vue.min.js"
+        integrity="sha512-BKbSR+cfyxLdMAsE0naLReFSLg8/pjbgfxHh/k/kUC82Hy7r6HtR5hLhobaln2gcTvzkyyehrdREdjpsQwy2Jw=="
+        crossorigin="anonymous"></script> -->
+
+    <!-- Tippy.js добавлен ради поддержки HTML аттрибута Title на мобильных устройствах -->
+    <script src="https://cdn.jsdelivr.net/npm/vue-tippy@4.7.0/dist/vue-tippy.min.js"
+        integrity="sha256-sT0TJHdUp1Vbp55KAHg6bu6gC/9JmAjZL6KVYSVmYes=" crossorigin="anonymous"></script>
+
+    <!-- Bootstrap switch: https://codepen.io/claviska/pen/KyWmjY -->
+    <link rel="stylesheet" href="/bs-switch.css" />
+
+</head>
+
+<body>
+
+    <div class="container" id="app">
+
+        <div class="row mt-3">
+            <h1 class="w-100">Light CI</h1>
+            <span class="lead w-100">Простая система сборки, собранная на коленках</span>
+
+            <div class="form-group mt-4">
+                <span class="switch">
+                    <input type="checkbox" class="switch" id="switch-normal" v-model="isRefresh">
+                    <label for="switch-normal">Обновлять автоматически</label>
+                </span>
+            </div>
+        </div>
+
+        <div class="row mt-4" v-if="isLoading">
+            <div class="progress w-100">
+                <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar"
+                    style="width: 100%"></div>
+            </div>
+        </div>
+
+        <div class="row mt-4" v-if="builds">
+
+            <ul class="nav nav-tabs">
+                <li class="nav-item" v-for="(build,name,index) in builds">
+                    <a class="nav-link" :class="isActive(name)" @click="() => selected = name" href="#">{{name}}</a>
+                </li>
+            </ul>
+
+            <table class="table mt-4" v-if="selected && build">
+                <tbody>
+                    <tr>
+                        <th>Проект:</td>
+                        <td>{{build.name}}</td>
+                    </tr>
+                    <tr>
+                        <th class="align-middle">Статус: </td>
+                        <td>
+                            <div class="alert-warning p-2" v-if="build.status === 'PROCESSING'">
+                                Выполняется
+                            </div>
+                            <template v-if="build.status === 'COMPLETED'">
+                                <div v-if="build.exit_code == 0" class="alert-success p-2">Завершено</div>
+                                <div v-else class="alert-danger p-2">Ошибка</div>
+                            </template>
+                        <td>
+                    </tr>
+                    <tr>
+                        <th>Был обновлён: </td>
+                        <td v-tippy="{ placement : 'top',  arrow: true }"
+                            :content="build.date|fullDate">
+                            {{build.date|fromNow}}
+                        </td>
+                    </tr>
+                    <tr v-if="build.elapsed">
+                        <th>Время выполнения: </td>
+                        <td>{{build.elapsed/1000}} секунд</td>
+                    </tr>
+                    <template v-if="build.logs">
+                        <tr>
+                            <th scope="row" colspan="2">STDErr:</th>
+                        </tr>
+                        <tr>
+                            <td colspan="2">
+                                <p v-for="line in build.logs.stderr">{{line}}</p>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th scope="row" colspan="2">STDOut:</th>
+                        </tr>
+                        <tr>
+                            <td colspan="2">
+                                <p v-for="line in build.logs.stdout">{{line}}</p>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th scope="row" colspan="2">Ошибки:</th>
+                        </tr>
+                        <tr>
+                            <td colspan="2">{{build.logs.err || "Не найдены"}}</td>
+                        </tr>
+                        <tr>
+                            <td colspan="2">
+                                <button class="btn btn-warning" @click="rebuild(build.name)">Пересобрать</button>
+                            </td>
+                        </tr>
+                    </template>
+                </tbody>
+            </table>
+            <div v-else>
+                <h2>Нет проектов для отображения!</h2>
+            </div>
+
+        </div>
+
+
+    </div>
+
+    <script type="text/javascript">
+        ((locale) => {
+            // Библиотеки вроде Moment.JS/Date-FNS/Day.js не умеют подгружать модули (например русскую локаль) без сборщика
+            // Поэтому пришлось писать подобный костыль
+            const formatterDate = new Intl.DateTimeFormat(locale, {
+                day: "2-digit",
+                month: "2-digit",
+                year: "2-digit"
+            });
+            const formatterTime = new Intl.DateTimeFormat(locale, {
+                hour: "numeric",
+                minute: "numeric",
+                second: "numeric"
+            });
+            const time_intervals = [
+                { name: "seconds", seconds: 1, max: 120 },
+                { name: "minutes", seconds: 60, max: 120 },
+                { name: "hours", seconds: 60 * 60, max: 23 },
+                { name: "days", seconds: 24 * 60 * 60, max: 14 }
+            ];
+            const formatterRelative = new Intl.RelativeTimeFormat(locale);
+            function fromNow(inputTime) {
+                const time = Math.floor(Math.abs(Date.now() - inputTime) / 1024);
+                for (let interval of time_intervals) {
+                    if (time < interval.max * interval.seconds) {
+                        const left = - Math.floor(time / interval.seconds);
+                        return formatterRelative.format(left, interval.name);
+                    }
+                }
+                return fullDate(inputTime);
+            }
+            function fullDate(inputTime) {
+                return formatterDate.format(inputTime) + " - " + formatterTime.format(inputTime);
+            }
+            window.DateTimeHelper = { fromNow, fullDate };
+        })("ru");
+
+        Vue.filter('fromNow', value => DateTimeHelper.fromNow(value));
+        Vue.filter('fullDate', value => DateTimeHelper.fullDate(value));
+
+        const wait = (timeout) => new Promise(resolve => setTimeout(resolve, timeout));
+
+        window.appVue = new Vue({
+            el: "#app",
+            data: {
+                isLoading: true,
+                isRefresh: false,
+                builds: null,
+                selected: null,
+                selectedTitle: null,
+            },
+            computed: {
+                build() {
+                    return this.builds?.[this.selected];
+                }
+            },
+            watch: {
+                isRefresh(value) {
+                    clearInterval(this.timerRefresh);
+                    if (value) {
+                        this.timerRefresh = setInterval(() => this.loadBuilds(), 1000);
+                    }
+                }
+            },
+            methods: {
+                isActive(title) {
+                    return this.selected === title ? "active" : "";
+                },
+                async rebuild(title) {
+                    await fetch(`/project/${title}`, { method: "POST" });
+                    await this.loadBuilds();
+                },
+                async loadBuilds() {
+                    this.builds = await fetch("/last-builds.json").then(x => x.json());
+                }
+            },
+            async mounted() {             
+                await this.loadBuilds();
+                this.isLoading = false;
+                if (this.builds) this.selected = Object.keys(this.builds)?.[0];
+            }
+        });
+    </script>
+
+    <footer class="footer m-5">
+        <div class="container">
+            <span class="text-muted">
+                Light CI, 2020 создатель
+                <a href="https://github.com/NoTimeForHero">NoTimeForHero</a>
+            </span>
+        </div>
+    </footer>    
+
+</body>
+
+</html>

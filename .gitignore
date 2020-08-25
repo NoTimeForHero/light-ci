@@ -1,0 +1,5 @@
+node_modules
+temp
+/config/*
+!/config/entrypoint.example.sh
+!/config/example-project
