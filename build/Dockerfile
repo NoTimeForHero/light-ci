@@ -18,11 +18,14 @@ FROM node:buster
 RUN apt-get update && apt-get install -y git sshpass openssh-client
 
 WORKDIR /app
+
+COPY ./backend/package*.json /app/
+RUN npm install --only=production
+
 COPY ./backend /app
 COPY --from=webpack_build /build/dist /app/public
 
-RUN mkdir ~/.ssh/ && chmod +x entrypoint.sh && npm i --only=production
-RUN ls -la /app/public
+RUN mkdir ~/.ssh/ && chmod +x entrypoint.sh
 
 ENTRYPOINT [ "/app/entrypoint.sh" ]
 
