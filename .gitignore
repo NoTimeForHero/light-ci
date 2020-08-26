@@ -1,5 +1,10 @@
 node_modules
 temp
+
 /config/*
 !/config/entrypoint.example.sh
 !/config/example-project
+
+# Убираем папку, в которой будут лежать скомпилированное приложение
+build/public
+build/public/*

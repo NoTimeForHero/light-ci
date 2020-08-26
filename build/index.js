@@ -21,8 +21,8 @@ app.use(express.json());
 app.use(express.static('public'));
 app.get('/', (_, res) => res.sendFile('public/index.html'));
 
-app.get('/last-builds.json', (_, res) => res.json(builds));
-app.get('/logs.json', (_, res) => res.json(build_logs));
+app.get('/api/last-builds', (_, res) => res.json(builds));
+app.get('/api/logs', (_, res) => res.json(build_logs));
 
 fs.readdir('/app/config/', (err, files) => {
 	if (err) {
@@ -38,7 +38,7 @@ fs.readdir('/app/config/', (err, files) => {
 	}));
 });
 
-app.post('/project/:project', (req, res) => {
+app.post('/api/project/:project', (req, res) => {
 	const project = req.params.project;
 	const script = `/app/config/${project}/build.sh`;
 
