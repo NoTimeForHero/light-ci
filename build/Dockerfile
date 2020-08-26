@@ -1,3 +1,14 @@
+FROM node:buster as webpack_build
+WORKDIR /build
+
+COPY ./frontend/package*.json /build/
+RUN npm install
+
+COPY ./frontend /build
+RUN npm run build
+
+
+
 FROM node:buster
 
 # Дополнительные пакеты:
@@ -7,13 +18,12 @@ FROM node:buster
 RUN apt-get update && apt-get install -y git sshpass openssh-client
 
 WORKDIR /app
-COPY . /app
+COPY ./backend /app
+COPY --from=webpack_build /build/dist /app/public
 
-COPY entrypoint.sh /entrypoint.sh
-RUN mkdir ~/.ssh/ && chmod +x /entrypoint.sh
+RUN mkdir ~/.ssh/ && chmod +x entrypoint.sh && npm i --only=production
+RUN ls -la /app/public
 
-RUN npm ci --only=production
-
-ENTRYPOINT [ "/entrypoint.sh" ]
+ENTRYPOINT [ "/app/entrypoint.sh" ]
 
 CMD ["npm", "start" ]

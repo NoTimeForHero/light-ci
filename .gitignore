@@ -6,5 +6,4 @@ temp
 !/config/example-project
 
 # Убираем папку, в которой будут лежать скомпилированное приложение
-build/public
-build/public/*
+build/backend/public
