@@ -13,5 +13,6 @@ module.exports = {
   rules: {
     'max-len': ['warn', { code: 120 }],
     'import/extensions': ['off'],
+    'no-console': ['off'],
   },
 };

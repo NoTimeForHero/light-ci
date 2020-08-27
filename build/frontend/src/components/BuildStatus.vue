@@ -7,7 +7,7 @@
             Выполняется
         </div>
         <template v-if="build.status === status_list.completed">
-            <div v-if="build.exit_code == 0" class="alert-success p-2">Завершено</div>
+            <div v-if="build.exitCode == 0" class="alert-success p-2">Завершено</div>
             <div v-else class="alert-danger p-2">Ошибка</div>
         </template>
     </span>

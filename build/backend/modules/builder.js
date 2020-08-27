@@ -10,14 +10,15 @@ const buildLogs = {};
 
 export function init(project) {
   console.log(`Initialize build project: ${project}`);
-  const build_id = nanoid();
+  const buildID = nanoid();
   const dateStart = Date.now();
   builds[project] = {
     name: project,
-    build_id,
+    buildID,
     status: BUILD_STATUS.ready,
-    date: dateStart,
-    can_build: true,
+    created: dateStart,
+    updated: dateStart,
+    canBuild: true,
   };
 }
 
@@ -36,38 +37,48 @@ export function isBuilding(project) {
 }
 
 export function build(project, script) {
-  const build_id = nanoid();
+  const buildID = nanoid();
   const dateStart = Date.now();
-  builds[project] = {
+  const curentBuild = {
     name: project,
-    build_id,
+    buildID,
     status: BUILD_STATUS.processing,
     created: dateStart,
     updated: dateStart,
-    can_build: false,
+    canBuild: false,
     logs: {
       stdout: [], stderr: [], error: [],
     },
   };
+  builds[project] = curentBuild;
 
   const process = child.spawn(script);
   process.on('error', (error) => {
-    builds[project].updated = Date.now();
-    builds[project].logs.stderr.push(error.toString());
+    curentBuild.updated = Date.now();
+    curentBuild.logs.stderr.push(error.toString());
   });
   process.stdout.on('data', (data) => {
-    builds[project].updated = Date.now();
-    builds[project].logs.stdout.push(data.toString());
+    curentBuild.updated = Date.now();
+    curentBuild.logs.stdout.push(data.toString());
   });
   process.stderr.on('data', (data) => {
-    builds[project].updated = Date.now();
-    builds[project].logs.stderr.push(data.toString());
+    curentBuild.updated = Date.now();
+    curentBuild.logs.stderr.push(data.toString());
   });
-  process.on('close', (exit_code) => {
-    builds[project].logs.stdout.push(`** Spawned process exited with code ${exit_code} ***`);
+  process.on('close', (exitCode) => {
+    curentBuild.logs.stdout.push(`** Spawned process exited with code ${exitCode} ***`);
     const updated = Date.now();
     const elapsed = updated - dateStart;
-    Object.assign(builds[project], { status: BUILD_STATUS.completed, updated, elapsed, exit_code, can_build: true });
-    if (builds[project]) buildLogs[build_id] = deepCopy(builds[project]);
+    Object.assign(
+      builds[project],
+      {
+        status: BUILD_STATUS.completed,
+        updated,
+        elapsed,
+        exitCode,
+        canBuild: true,
+      },
+    );
+    if (builds[project]) buildLogs[curentBuild.buildID] = deepCopy(builds[project]);
   });
 }

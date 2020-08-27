@@ -16,7 +16,7 @@
                     <a class="nav-link btn-primary" href="javascript:void(0)" @click="showLogs">Логи</a>
                 </li>
                 <li class="nav-item" v-for="(build,name) in builds" :key="name">
-                    <a class="nav-link" :class="isActive(build.build_id)"
+                    <a class="nav-link" :class="isActive(build.buildID)"
                         @click="showBuild(build)" href="javascript:void(0)">{{name}}</a>
                 </li>
             </ul>
@@ -32,10 +32,10 @@
                     </tr>
                 </thead>
                 <tbody>
-                    <tr v-for="build in logs" :key="build.build_id">
+                    <tr v-for="build in logs" :key="build.buildID">
                         <td>{{build.name}}</td>
                         <td>
-                            <a href="javascript:void(0);" @click="showBuild(build,true)">{{build.build_id}}</a>
+                            <a href="javascript:void(0);" @click="showBuild(build,true)">{{build.buildID}}</a>
                         </td>
                         <td v-tippy="{ placement : 'top',  arrow: true }"
                             :content="build.updated|fullDate">
@@ -57,7 +57,7 @@
                     </tr>
                     <tr>
                         <th>ID билда:</th>
-                        <td>{{build.build_id}}</td>
+                        <td>{{build.buildID}}</td>
                     </tr>
                     <tr>
                         <th class="align-middle">Статус:</th>
@@ -107,7 +107,7 @@
                             <td colspan="2">{{build.logs.err || "Не найдены"}}</td>
                         </tr>
                     </template>
-                    <tr v-if="build.can_build">
+                    <tr v-if="build.canBuild">
                         <td colspan="2">
                             <button class="btn btn-warning" @click="rebuild(build.name)">Пересобрать</button>
                         </td>
@@ -151,7 +151,7 @@ export default {
   },
   methods: {
     isActive(id) {
-      return this.build?.build_id === id ? 'active' : '';
+      return this.build?.buildID === id ? 'active' : '';
     },
     async rebuild(title) {
       await fetch(`/api/project/${title}`, { method: 'POST' });

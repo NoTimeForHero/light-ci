@@ -49,5 +49,5 @@ app.post('/api/project/:project', (req, res) => {
 });
 
 app.listen(port, () => {
-  console.log(`[CI-Light] Listening at http://localhost:${port}`)
+  console.log(`[CI-Light] Listening at http://localhost:${port}`);
 });
