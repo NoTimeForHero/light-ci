@@ -6,4 +6,4 @@ docker run \
 	-v `pwd`/temp:/app/temp \
 	-p 3000:3000 \
 	--name light-ci \
-	-d notimeforhero/light-ci
+	notimeforhero/light-ci
