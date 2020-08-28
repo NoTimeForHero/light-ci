@@ -7,6 +7,8 @@ import { BUILD_STATUS } from './constants.js';
 const buildsLatest = {};
 const buildsLogs = {};
 
+const buildMap = new Map();
+
 export function init(project) {
   console.log(`Initialize build project: ${project}`);
   const buildID = nanoid();
@@ -26,21 +28,22 @@ export function registerRoutes(express) {
   express.get('/test', (_, res) => res.json({ message: 'Hello world!' }));
   express.get('/api/build/:id', (req, res) => {
     const { id } = req.params;
-    console.log(id, buildsLogs[id]);
     res.json(buildsLogs[id]);
   });
   express.get('/api/logs', (_, res) => res.json(buildsLogs));
   express.get('/api/projects', (_, res) => res.json(buildsLatest));
 }
 
-export function isBuilding(project) {
+export function getStatus(project) {
   const buildID = buildsLatest[project];
   const curBuild = buildsLogs[buildID];
-  if (!curBuild) return false;
-  return curBuild.status === BUILD_STATUS.processing;
+  return {
+    buildID,
+    isBuilding: curBuild?.status === BUILD_STATUS.processing
+  };
 }
 
-export function build(project, script) {
+function buildRaw(project, script) {
   const buildID = nanoid();
   const dateStart = Date.now();
   const curentBuild = {
@@ -88,3 +91,24 @@ export function build(project, script) {
   });
   return buildID;
 }
+
+export function build(project, script) {
+  const status = getStatus(project);
+
+  if (status.isBuilding) {
+    buildMap.set(project, { script });
+    console.log('[buildMap] Added project to queue', project, script);
+    return status.buildID;
+  }
+
+  buildMap.delete(project);
+  console.log('[buildMap] Building project from queue', project, script);
+  return buildRaw(project, script);
+}
+
+setInterval(() => {
+  for (const entry of buildMap.entries()) {
+    const [project, { script }] = entry;
+    build(project, script);
+  }
+}, 5000);

@@ -54,7 +54,7 @@ export default {
       return this.build === id ? 'active' : '';
     },
     async rebuild(project) {
-      const { build } = await fetch(`/api/project/${project}`, { method: 'POST' }).then((x) => x.json());
+      const { build } = await fetch(`/api/build/${project}`, { method: 'POST' }).then((x) => x.json());
       await this.$router.push(`/build/${build}`);
     },
     async refresh() {

@@ -2,9 +2,11 @@ import express from 'express';
 // import bodyParser from 'body-parser';
 // import util from 'util';
 import fs from 'fs';
+import path from 'path';
 
 import * as builder from './modules/builder.js';
 
+const dirname = path.resolve();
 const app = express();
 const port = 3000;
 
@@ -22,20 +24,12 @@ fs.readdir('/app/config/', (err, files) => {
 
 app.use(express.json());
 app.use(express.static('public'));
-app.get('/', (_, res) => res.sendFile('public/index.html'));
 
 builder.registerRoutes(app);
 
-app.post('/api/project/:project', (req, res) => {
+const tryBuild = (req, res) => {
   const { project } = req.params;
   const script = `/app/config/${project}/build.sh`;
-
-  // TODO: Добавлять в очередь на повторный ребилд вместо выброса ошибки
-  if (builder.isBuilding(project)) {
-    res.status(503);
-    res.json({ error: 'BUILD IN PROGRESS!' });
-    return;
-  }
 
   if (!fs.existsSync(script)) {
     res.status(404);
@@ -45,7 +39,17 @@ app.post('/api/project/:project', (req, res) => {
 
   const build = builder.build(project, script);
   res.json({ status: 'ACCEPTED', build });
+};
+
+app.post('/api/build/:project', (req, res) => {
+  tryBuild(req, res);
 });
+
+app.post('/api/webhook/:project', (req, res) => {
+  tryBuild(req, res);
+});
+
+app.all('/*', (_, res) => res.sendFile(`${dirname}/public/index.html`));
 
 app.listen(port, () => {
   console.log(`[CI-Light] Listening at http://localhost:${port}`);
