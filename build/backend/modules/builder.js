@@ -18,20 +18,21 @@ export async function initialize(storage) {
 }
 
 export function init(project, script) {
+  scriptMap.set(project, script);
+
   let buildID = buildsLatest[project];
   const log = buildsLogs[buildID];
   if (buildID && log) {
-    console.log(`Лог для проекта "${project}" найден в базе данных!`);
+    console.log(`[Build] Лог для проекта "${project}" найден в базе данных!`);
     return;
   }
 
   console.log(`[Build] Создаём начальный лог: ${project}`);
   buildID = nanoid();
   const dateStart = Date.now();
-  scriptMap.set(project, script);
   buildsLatest[project] = buildID;
   buildsLogs[buildID] = {
-    name: project,
+    project,
     buildID,
     status: BUILD_STATUS.ready,
     created: dateStart,
@@ -75,13 +76,13 @@ export function getStatus(project) {
   };
 }
 
-function buildRaw(project, meta) {
+async function buildRaw(project, meta) {
   const script = scriptMap.get(project);
   if (!script) throw new Error(`Не удалось найти билд-скрипт для проекта "${project}"!`);
   const buildID = nanoid();
   const dateStart = Date.now();
   const curentBuild = {
-    name: project,
+    project,
     buildID,
     status: BUILD_STATUS.processing,
     created: dateStart,
@@ -108,7 +109,7 @@ function buildRaw(project, meta) {
     curentBuild.updated = Date.now();
     curentBuild.logs.stderr.push(data.toString());
   });
-  process.on('close', (exitCode) => {
+  process.on('close', async (exitCode) => {
     curentBuild.logs.stdout.push(`** Spawned process exited with code ${exitCode} ***`);
     const updated = Date.now();
     const elapsed = updated - dateStart;
@@ -123,8 +124,8 @@ function buildRaw(project, meta) {
       }
     );
     buildsLogs[buildID] = curentBuild;
-    buildStorage.updateLatest(project, buildID);
-    buildStorage.addLog(buildID, curentBuild);
+    await buildStorage.updateLatest(project, buildID);
+    await buildStorage.addLog(buildID, curentBuild);
   });
   return buildID;
 }

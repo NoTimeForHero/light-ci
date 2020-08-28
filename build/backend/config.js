@@ -12,6 +12,12 @@ const database = {
   type: 'memory' // Допустимые значения: ['memory', 'sqlite']
 };
 
+// // Пример использования SQLite для сохранения логов билдов:
+// const database = {
+//   type: 'sqlite',
+//   filename: '/app/temp/database.sqlite3'
+// };
+
 const authorization = {
   type: 'disabled'
 };

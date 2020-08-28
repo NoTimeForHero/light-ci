@@ -7,7 +7,7 @@
       <tbody>
       <tr>
         <th>Проект:</th>
-        <td>{{build.name}}</td>
+        <td>{{build.project}}</td>
       </tr>
       <tr>
         <th>ID билда:</th>
@@ -77,7 +77,7 @@
       </template>
       <tr v-if="build.canBuild">
         <td colspan="2">
-          <button class="btn btn-warning" @click="rebuild(build.name)">Пересобрать</button>
+          <button class="btn btn-warning" @click="rebuild(build.project)">Пересобрать</button>
         </td>
       </tr>
       </tbody>

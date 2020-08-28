@@ -2,28 +2,12 @@
 /* eslint-disable no-unused-vars */
 /* eslint-disable max-classes-per-file */
 /* eslint-disable class-methods-use-this */
+import sqliteBuilder from 'sqlite3';
 
-class AbstractStorage {
-  // eslint-disable-next-line no-unused-vars
-  constructor(settings) {
-    if (new.target === AbstractStorage) {
-      throw new Error('Impossible to create instance of Abstract Class!');
-    }
-    console.log(`[Database] Создана база данных ${new.target.name}`);
-  }
+const sqlite = sqliteBuilder.verbose();
 
-  async getLogs() {}
-
-  async getLatest() {}
-
-  async addLog(buildID, payload) {}
-
-  async updateLatest(project, buildID) {}
-}
-
-class MemoryStorage extends AbstractStorage {
+class MemoryStorage {
   constructor() {
-    super();
     this.logs = {};
     this.latest = {};
   }
@@ -47,12 +31,103 @@ class MemoryStorage extends AbstractStorage {
   }
 }
 
+class SqliteStorage extends MemoryStorage {
+  constructor(settings) {
+    super();
+    const { filename } = settings;
+    if (!filename) throw new Error('Не указан файл (filename) для хранения SQLite!');
+    this.database = new sqlite.Database(filename);
+    this.database.serialize(() => {
+      const queries = [
+        `--DROP TABLE IF EXISTS logs;
+        CREATE TABLE IF NOT EXISTS logs (
+          buildID text NOT NULL,
+          project text NOT NULL,
+          created DATETIME NOT NULL,
+          payload JSON NULL
+        );`,
+        'CREATE UNIQUE INDEX IF NOT EXISTS idx_buildID ON logs (buildID);',
+        'CREATE INDEX IF NOT EXISTS idx_project ON logs (project);',
+        'CREATE INDEX IF NOT EXISTS idx_created ON logs (created);',
+        `--DROP TABLE IF EXISTS latest;
+        CREATE TABLE IF NOT EXISTS latest (
+          project text NOT NULL,  
+          buildID text NOT NULL
+        );`,
+        'CREATE UNIQUE INDEX IF NOT EXISTS idx_primary ON latest(project);'
+      ];
+      queries.forEach((query) => this.database.run(query));
+    });
+  }
+
+  async getQuery(sql, params = []) {
+    return new Promise((resolve, reject) => {
+      const onDone = (error, data) => {
+        if (error) reject(error);
+        resolve(data);
+      };
+      this.database.all(sql, params, onDone);
+    });
+  }
+
+  async runQuery(sql, params = []) {
+    return new Promise((resolve, reject) => {
+      const onDone = (error, data) => {
+        if (error) reject(error);
+        resolve(data);
+      };
+      this.database.run(sql, params, onDone);
+    });
+  }
+
+  async getLogs() {
+    let logs = await this.getQuery('SELECT * FROM logs');
+    logs = logs.reduce((obj, el) => {
+      const { buildID, payload, ...values } = el;
+      // eslint-disable-next-line no-param-reassign
+      obj[buildID] = { ...values, ...JSON.parse(payload) };
+      return obj;
+    }, {});
+    return logs;
+  }
+
+  async getLatest() {
+    let latest = await this.getQuery('SELECT * FROM latest');
+    latest = latest.reduce((obj, el) => {
+      // eslint-disable-next-line no-param-reassign
+      obj[el.project] = el.buildID;
+      return obj;
+    }, {});
+    return latest;
+  }
+
+  async addLog(buildID, payload) {
+    console.log(`[Database] Запись в лог билда ${buildID}`);
+    this.logs[buildID] = payload;
+    const { project, created } = payload;
+    await this.runQuery(
+      'INSERT INTO logs(buildID, project, created, payload) VALUES (?,?,?,?)',
+      [buildID, project, created, JSON.stringify(payload)]
+    );
+  }
+
+  async updateLatest(project, buildID) {
+    console.log(`[Database] Для проекта ${project} установлен текущий билд ${buildID}`);
+    this.latest[project] = buildID;
+    await this.runQuery(
+      `INSERT INTO latest(project,buildID) VALUES(?,?)
+      ON CONFLICT(project) DO UPDATE SET buildID = excluded.buildID;`,
+      [project, buildID]
+    );
+  }
+}
+
 let storage = null;
 
 /**
  * Recieves or creates storage by settings
  * @param {Object} settings Storage settings
- * @returns {AbstractStorage} Storage
+ * @returns {MemoryStorage} Storage
  */
 export default function getDatabase(settings) {
   if (storage != null) return storage;
@@ -61,6 +136,9 @@ export default function getDatabase(settings) {
   switch (type) {
     case 'memory':
       storage = new MemoryStorage(settings);
+      break;
+    case 'sqlite':
+      storage = new SqliteStorage(settings);
       break;
     default:
       throw new Error(`Неизвестный тип хранилища: ${type}`);

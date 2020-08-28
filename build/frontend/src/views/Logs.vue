@@ -11,7 +11,7 @@
     </thead>
     <tbody>
     <tr v-for="build in logs" :key="build.buildID">
-      <td>{{build.name}}</td>
+      <td>{{build.project}}</td>
       <td>
         <router-link :to="`/build/${build.buildID}`">{{build.buildID}}</router-link>
       </td>
