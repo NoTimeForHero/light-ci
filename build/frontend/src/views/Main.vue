@@ -33,7 +33,7 @@ export default {
       isRefresh: false,
       builds: null,
       projects: null,
-      updateTick: 0,
+      updateTick: 0
     };
   },
   watch: {
@@ -42,12 +42,12 @@ export default {
       if (value) {
         this.timerRefresh = setInterval(() => this.refresh(), 1000);
       }
-    },
+    }
   },
   computed: {
     build() {
       return this.$route.params.build;
-    },
+    }
   },
   methods: {
     isActive(id) {
@@ -61,12 +61,12 @@ export default {
       this.projects = await fetch('/api/projects').then((x) => x.json());
       this.updateTick += 1;
       this.$forceUpdate();
-    },
+    }
   },
   async mounted() {
     await this.refresh();
     this.isLoading = false;
     this.page = 'build';
-  },
+  }
 };
 </script>

@@ -17,5 +17,5 @@ Vue.filter('fullDate', (value) => dtHelper.fullDate(value));
 
 new Vue({
   router,
-  render: (h) => h(App),
+  render: (h) => h(App)
 }).$mount('#app');

@@ -5,18 +5,18 @@ class DateTimeHelper {
       { name: 'seconds', seconds: 1, max: 120 },
       { name: 'minutes', seconds: 60, max: 120 },
       { name: 'hours', seconds: 60 * 60, max: 23 },
-      { name: 'days', seconds: 24 * 60 * 60, max: 14 },
+      { name: 'days', seconds: 24 * 60 * 60, max: 14 }
     ];
     this.formatterRelative = new Intl.RelativeTimeFormat(locale);
     this.formatterDate = new Intl.DateTimeFormat(locale, {
       day: '2-digit',
       month: '2-digit',
-      year: '2-digit',
+      year: '2-digit'
     });
     this.formatterTime = new Intl.DateTimeFormat(locale, {
       hour: 'numeric',
       minute: 'numeric',
-      second: 'numeric',
+      second: 'numeric'
     });
   }
 

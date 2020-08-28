@@ -38,30 +38,30 @@ import BuildStatus from '../components/BuildStatus.vue';
 export default {
   name: 'Logs',
   props: {
-    updateTick: Number,
+    updateTick: Number
   },
   components: {
-    'build-status': BuildStatus,
+    'build-status': BuildStatus
   },
   data() {
     return {
-      logs: null,
+      logs: null
     };
   },
   watch: {
     updateTick() {
       this.load();
-    },
+    }
   },
   methods: {
     async load() {
       this.logs = await fetch('/api/logs').then((x) => x.json());
-    },
+    }
   },
   mounted() {
     this.BUILD_STATUS = BUILD_STATUS;
     this.load();
-  },
+  }
 };
 </script>
 

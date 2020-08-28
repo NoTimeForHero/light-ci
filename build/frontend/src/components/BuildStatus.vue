@@ -15,6 +15,6 @@
 
 <script>
 export default {
-  props: { build: Object, status_list: Object },
+  props: { build: Object, status_list: Object }
 };
 </script>

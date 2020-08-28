@@ -15,9 +15,9 @@ const routes = [
     component: Main,
     children: [
       { path: '/build/:build', component: Build },
-      { path: '/logs', component: Logs },
-    ],
-  },
+      { path: '/logs', component: Logs }
+    ]
+  }
   // {
   //   path: '/about',
   //   name: 'About',
@@ -31,7 +31,7 @@ const routes = [
 const router = new VueRouter({
   mode: 'history',
   base: process.env.BASE_URL,
-  routes,
+  routes
 });
 
 export default router;

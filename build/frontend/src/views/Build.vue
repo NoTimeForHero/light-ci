@@ -73,14 +73,14 @@ import BuildStatus from '../components/BuildStatus.vue';
 export default {
   name: 'Build',
   props: {
-    updateTick: Number,
+    updateTick: Number
   },
   components: {
-    'build-status': BuildStatus,
+    'build-status': BuildStatus
   },
   data() {
     return {
-      build: null,
+      build: null
     };
   },
   watch: {
@@ -90,7 +90,7 @@ export default {
     },
     updateTick() {
       this.load();
-    },
+    }
   },
   methods: {
     rebuild(name) {
@@ -99,12 +99,12 @@ export default {
     async load() {
       const { build } = this.$route.params;
       this.build = await fetch(`/api/build/${build}`).then((x) => x.json());
-    },
+    }
   },
   mounted() {
     this.BUILD_STATUS = BUILD_STATUS;
     this.load();
-  },
+  }
 };
 </script>
 
