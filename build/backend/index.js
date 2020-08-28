@@ -5,6 +5,7 @@ import fs from 'fs';
 import path from 'path';
 
 import * as builder from './modules/builder.js';
+import config from './config.js';
 
 const dirname = path.resolve();
 const app = express();
@@ -17,9 +18,17 @@ fs.readdir('/app/config/', (err, files) => {
     console.error('Failed to list a tasks!', err);
     return;
   }
-  files.forEach((project) => fs.exists(`/app/config/${project}/build.sh`, (exists) => {
-    if (exists) builder.init(project);
-  }));
+  files.forEach((project) => {
+    const scriptFile = config.projects[project]?.script ?? 'build.sh';
+    const scriptPath = `/app/config/${project}/${scriptFile}`;
+    fs.exists(scriptPath, (exists) => {
+      if (!exists) {
+        console.log(`Для проекта "${project}" не найден скрипт запуска: ${scriptPath}`);
+        return;
+      }
+      builder.init(project, scriptPath);
+    });
+  });
 });
 
 app.use(express.json());
@@ -29,15 +38,14 @@ builder.registerRoutes(app);
 
 const tryBuild = (req, res) => {
   const { project } = req.params;
-  const script = `/app/config/${project}/build.sh`;
 
-  if (!fs.existsSync(script)) {
+  if (!builder.hasProject(project)) {
     res.status(404);
     res.json({ error: 'NOT FOUND PROJECT' });
     return;
   }
 
-  const build = builder.build(project, script);
+  const build = builder.build(project);
   res.json({ status: 'ACCEPTED', build });
 };
 
