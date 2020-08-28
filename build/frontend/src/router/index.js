@@ -2,6 +2,9 @@ import Vue from 'vue';
 import VueRouter from 'vue-router';
 import Main from '../views/Main.vue';
 
+import Build from '../views/Build.vue';
+import Logs from '../views/Logs.vue';
+
 Vue.use(VueRouter);
 
 const routes = [
@@ -10,6 +13,10 @@ const routes = [
     path: '/',
     name: 'Main',
     component: Main,
+    children: [
+      { path: '/build/:build', component: Build },
+      { path: '/logs', component: Logs },
+    ],
   },
   // {
   //   path: '/about',

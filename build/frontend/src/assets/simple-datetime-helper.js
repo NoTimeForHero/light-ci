@@ -21,6 +21,7 @@ class DateTimeHelper {
   }
 
   fromNow(inputTime) {
+    if (!inputTime) return 'Неизвестно';
     if (Number.isNaN(inputTime)) return 'Неизвестно';
     const time = Math.floor(Math.abs(Date.now() - inputTime) / 1024);
     for (const interval of this.timeIntervals) {
