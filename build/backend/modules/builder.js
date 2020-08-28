@@ -4,15 +4,29 @@ import * as child from 'child_process';
 import { BUILD_STATUS } from './constants.js';
 import { mapValues } from './utils.js';
 
-const buildsLatest = {};
-const buildsLogs = {};
+let buildsLatest = {};
+let buildsLogs = {};
+let buildStorage = null;
 
 const buildMap = new Map();
 const scriptMap = new Map();
 
+export async function initialize(storage) {
+  buildStorage = storage;
+  buildsLatest = await storage.getLatest();
+  buildsLogs = await storage.getLogs();
+}
+
 export function init(project, script) {
-  console.log(`Found project: ${project}`);
-  const buildID = nanoid();
+  let buildID = buildsLatest[project];
+  const log = buildsLogs[buildID];
+  if (buildID && log) {
+    console.log(`Лог для проекта "${project}" найден в базе данных!`);
+    return;
+  }
+
+  console.log(`[Build] Создаём начальный лог: ${project}`);
+  buildID = nanoid();
   const dateStart = Date.now();
   scriptMap.set(project, script);
   buildsLatest[project] = buildID;
@@ -109,19 +123,21 @@ function buildRaw(project, meta) {
       }
     );
     buildsLogs[buildID] = curentBuild;
+    buildStorage.updateLatest(project, buildID);
+    buildStorage.addLog(buildID, curentBuild);
   });
   return buildID;
 }
 
-export function build(project, meta) {
+export async function build(project, meta) {
   const status = getStatus(project);
   if (status.isBuilding) {
     buildMap.set(project, meta);
-    console.log('[BuildMap] Added project to queue', project);
+    console.log('[Build] Проект добавлен в очередь: ', project);
     return status.buildID;
   }
   buildMap.delete(project);
-  console.log('[BuildMap] Pulled project from queue', project);
+  console.log('[Build] Запущен билд проекта: ', project);
   return buildRaw(project, meta);
 }
 

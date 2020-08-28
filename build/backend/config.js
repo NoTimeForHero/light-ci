@@ -2,10 +2,14 @@ const projects = {
   'example-project': {
     script: 'build.sh', // Возможность поменять название сборочного скрипта для конкретного проекта
     security: {
-      type: 'GITHUB',
-      secret: 'hello_world'
+      type: 'github', // Допустимые значения: ['github']
+      secret: '%the_very_secret_key%'
     }
   }
+};
+
+const database = {
+  type: 'memory' // Допустимые значения: ['memory', 'sqlite']
 };
 
 const authorization = {
@@ -13,5 +17,5 @@ const authorization = {
 };
 
 export default {
-  projects, authorization
+  projects, authorization, database
 };
