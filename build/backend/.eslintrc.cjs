@@ -15,6 +15,6 @@ module.exports = {
     'import/extensions': ['off'],
     'no-console': ['off'],
     'comma-dangle': ['error', 'never'],
-    'no-restricted-syntax': ['error', 'FunctionExpression', 'WithStatement', 'BinaryExpression[operator=\'in\']']
+    'no-restricted-syntax': ['error', 'WithStatement', 'BinaryExpression[operator=\'in\']']
   }
 };

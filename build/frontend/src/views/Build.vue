@@ -37,6 +37,20 @@
         <th>Время выполнения: </th>
         <td>{{build.elapsed/1000}} секунд</td>
       </tr>
+      <tr v-if="build.verified">
+        <th>Запущен: </th>
+        <td>
+          <span v-if="build.verified.company && build.verified.subject === 'GitHub'">
+            <img src="https://github.com/favicon.ico" />
+            <span class="ml-2">GitHub</span>
+          </span>
+          <span v-else>
+            <span class="type">{{build.verified.company ? "Организацией" : "Пользователем"}}</span>
+            &nbsp;
+            <span class="subject">{{build.verified.subject}}</span>
+          </span>
+        </td>
+      </tr>
       <template v-if="build.logs">
         <tr>
           <th scope="row" colspan="2">STDErr:</th>

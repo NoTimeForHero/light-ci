@@ -7,7 +7,7 @@ import { mapValues } from './utils.js';
 const buildsLatest = {};
 const buildsLogs = {};
 
-const buildQueue = new Set();
+const buildMap = new Map();
 const scriptMap = new Map();
 
 export function init(project, script) {
@@ -61,7 +61,7 @@ export function getStatus(project) {
   };
 }
 
-function buildRaw(project) {
+function buildRaw(project, meta) {
   const script = scriptMap.get(project);
   if (!script) throw new Error(`Не удалось найти билд-скрипт для проекта "${project}"!`);
   const buildID = nanoid();
@@ -75,7 +75,8 @@ function buildRaw(project) {
     canBuild: false,
     logs: {
       stdout: [], stderr: [], error: []
-    }
+    },
+    ...meta
   };
   buildsLogs[buildID] = curentBuild;
   buildsLatest[project] = buildID;
@@ -112,22 +113,21 @@ function buildRaw(project) {
   return buildID;
 }
 
-export function build(project) {
+export function build(project, meta) {
   const status = getStatus(project);
-
   if (status.isBuilding) {
-    buildQueue.add(project);
-    console.log('[BuildQueue] Added project to queue', project);
+    buildMap.set(project, meta);
+    console.log('[BuildMap] Added project to queue', project);
     return status.buildID;
   }
-
-  buildQueue.delete(project);
-  console.log('[BuildQueue] Building project from queue', project);
-  return buildRaw(project);
+  buildMap.delete(project);
+  console.log('[BuildMap] Pulled project from queue', project);
+  return buildRaw(project, meta);
 }
 
 setInterval(() => {
-  for (const project of buildQueue.values()) {
-    build(project);
+  for (const entry of buildMap.entries()) {
+    const [project, meta] = entry;
+    build(project, meta);
   }
 }, 5000);
