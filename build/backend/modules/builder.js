@@ -5,8 +5,8 @@ import { BUILD_STATUS } from './constants.js';
 import { mapValues } from './utils.js';
 
 let buildsLatest = {};
-let buildsLogs = {};
 let buildStorage = null;
+const cacheLogs = {};
 
 const buildMap = new Map();
 const scriptMap = new Map();
@@ -14,14 +14,13 @@ const scriptMap = new Map();
 export async function initialize(storage) {
   buildStorage = storage;
   buildsLatest = await storage.getLatest();
-  buildsLogs = await storage.getLogs();
 }
 
-export function init(project, script) {
+export async function init(project, script) {
   scriptMap.set(project, script);
 
   let buildID = buildsLatest[project];
-  const log = buildsLogs[buildID];
+  const log = await buildStorage.getLog(buildID);
   if (buildID && log) {
     console.log(`[Build] Лог для проекта "${project}" найден в базе данных!`);
     return;
@@ -31,7 +30,7 @@ export function init(project, script) {
   buildID = nanoid();
   const dateStart = Date.now();
   buildsLatest[project] = buildID;
-  buildsLogs[buildID] = {
+  cacheLogs[buildID] = {
     project,
     buildID,
     status: BUILD_STATUS.ready,
@@ -47,29 +46,34 @@ export function hasProject(project) {
 
 export function registerRoutes(express) {
   express.get('/test', (_, res) => res.json({ message: 'Hello world!' }));
-  express.get('/api/build/:id', (req, res) => {
+  express.get('/api/build/:id', async (req, res) => {
     const { id } = req.params;
-    const log = buildsLogs[id];
+    let log = cacheLogs[id];
+    if (!log) log = await buildStorage.getLog(id);
     if (log) {
-      res.json(buildsLogs[id]);
+      res.json(log);
     } else {
       res.status(404);
       res.json({ error: 'Объект не найден!', id });
     }
   });
-  express.get('/api/logs', (_, res) => {
-    const filteredLogs = mapValues(buildsLogs, (item) => {
+  express.get('/api/logs', async (req, res) => {
+    const count = req.query.count ?? 10;
+    const offset = req.query.offset ?? 0;
+    const dbLogs = await buildStorage.getLogs(count, offset);
+    const mergedLogs = { ...cacheLogs, ...dbLogs.logs };
+    const filteredLogs = mapValues(mergedLogs, (item) => {
       const { logs, ...values } = item; // Исключаем тяжелые логи из списка билдов
       return values;
     });
-    res.json(filteredLogs);
+    res.json({ total: dbLogs.total, logs: filteredLogs });
   });
   express.get('/api/projects', (_, res) => res.json(buildsLatest));
 }
 
 export function getStatus(project) {
   const buildID = buildsLatest[project];
-  const curBuild = buildsLogs[buildID];
+  const curBuild = cacheLogs[buildID];
   return {
     buildID,
     isBuilding: curBuild?.status === BUILD_STATUS.processing
@@ -93,7 +97,7 @@ async function buildRaw(project, meta) {
     },
     ...meta
   };
-  buildsLogs[buildID] = curentBuild;
+  cacheLogs[buildID] = curentBuild;
   buildsLatest[project] = buildID;
 
   const process = child.spawn(script);
@@ -123,9 +127,9 @@ async function buildRaw(project, meta) {
         canBuild: true
       }
     );
-    buildsLogs[buildID] = curentBuild;
     await buildStorage.updateLatest(project, buildID);
     await buildStorage.addLog(buildID, curentBuild);
+    delete cacheLogs[buildID];
   });
   return buildID;
 }

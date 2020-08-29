@@ -19,7 +19,7 @@
             </li>
           </ul>
         </div>
-        <div class="row mt-4" v-if="projects">
+        <div class="row" v-if="projects">
             <router-view :updateTick="updateTick" @rebuild="rebuild" />
         </div>
     </div>

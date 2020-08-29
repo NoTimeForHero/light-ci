@@ -15,7 +15,14 @@ const routes = [
     component: Main,
     children: [
       { path: '/build/:build', component: Build },
-      { path: '/logs', component: Logs }
+      {
+        path: '/logs/:page?',
+        component: Logs,
+        props: (route) => ({
+          buildsPerPage: 6,
+          page: parseInt(route.params.page, 10) || 1
+        })
+      }
     ]
   }
   // {

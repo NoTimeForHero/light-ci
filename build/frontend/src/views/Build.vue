@@ -1,5 +1,5 @@
 <template>
-  <div class="w-100">
+  <div class="w-100 mt-2">
     <div class="alert alert-danger" v-if="error">
         {{error.message}}
     </div>

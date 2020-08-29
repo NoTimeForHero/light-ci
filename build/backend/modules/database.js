@@ -12,8 +12,12 @@ class MemoryStorage {
     this.latest = {};
   }
 
-  async getLogs() {
+  async getLogs(count = 10, offset = 0) {
     return this.logs;
+  }
+
+  async getLog(buildID) {
+    return this.logs[buildID];
   }
 
   async getLatest() {
@@ -80,15 +84,26 @@ class SqliteStorage extends MemoryStorage {
     });
   }
 
-  async getLogs() {
-    let logs = await this.getQuery('SELECT * FROM logs');
+  async getLog(buildID) {
+    const logs = await this.getQuery('SELECT * FROM logs WHERE buildID = ?', [buildID]);
+    const [record] = logs.map((el) => {
+      const { payload, ...values } = el;
+      // eslint-disable-next-line no-param-reassign
+      return { ...values, ...JSON.parse(payload) };
+    });
+    return record;
+  }
+
+  async getLogs(count = 10, offset = 0) {
+    const total = await this.getQuery('SELECT COUNT(buildID) AS count FROM logs').then((x) => x[0]?.count);
+    let logs = await this.getQuery('SELECT * FROM logs ORDER BY created DESC LIMIT ? OFFSET ?', [count, offset]);
     logs = logs.reduce((obj, el) => {
       const { buildID, payload, ...values } = el;
       // eslint-disable-next-line no-param-reassign
       obj[buildID] = { ...values, ...JSON.parse(payload) };
       return obj;
     }, {});
-    return logs;
+    return { total, logs };
   }
 
   async getLatest() {
