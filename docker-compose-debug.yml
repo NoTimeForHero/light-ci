@@ -1,0 +1,27 @@
+version: "3.8"
+services:
+  backend:
+    build: ./build
+    volumes:
+      - ${PWD}/config:/app/config:ro
+      - ${PWD}/build/backend/config.js:/app/config.js:ro      
+      - ${PWD}/build/backend/modules:/app/modules:ro
+      - ${PWD}/build/backend/index.js:/app/index.js:ro
+      - ${PWD}/temp:/app/temp
+    ports:
+      - 3000:3000
+  # # К сожалению, inotify из Windows хоста Docker не передаётся в Linux даже в WSL 2
+  # # Поэтому DevServer фронта приходится запускать от хоста
+  # # Подробнее: https://forums.docker.com/t/file-system-watch-does-not-work-with-mounted-volumes/12038
+  # frontend:
+  #   build:
+  #     context: ./build/frontend
+  #     dockerfile: Dockerfile-debug
+  #   volumes:
+  #     - ${PWD}/build/frontend/src:/build/src:ro      
+  #   # DevServer из Vue CLI почему-то игнорирует SIGTERM      
+  #   stop_grace_period: 1s
+  #   environment: 
+  #     - PROXY_PASS=http://backend:3000
+  #   ports:
+  #     - 9123:9123

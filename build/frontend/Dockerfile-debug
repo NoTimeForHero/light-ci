@@ -1,0 +1,10 @@
+FROM node:buster as webpack_build
+WORKDIR /build
+
+COPY ./package*.json /build/
+RUN npm install
+
+COPY . /build
+
+EXPOSE 9123
+CMD npm run serve
