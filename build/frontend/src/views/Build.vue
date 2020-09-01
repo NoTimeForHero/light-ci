@@ -86,17 +86,10 @@
 </template>
 
 <script>
+import axios from '@/ajax';
+import { mustJSON } from '@/helpers';
 import { BUILD_STATUS } from '@/assets/constants';
 import BuildStatus from '../components/BuildStatus.vue';
-
-class HttpError extends Error {
-  constructor(message, http, json) {
-    super(message);
-    this.http = http;
-    this.json = json;
-    this.message = json?.error ?? message;
-  }
-}
 
 export default {
   name: 'Build',
@@ -129,10 +122,7 @@ export default {
       const { build } = this.$route.params;
       this.error = null;
       try {
-        const http = await fetch(`/api/build/${build}`);
-        const json = await http.json();
-        if (http.status > 400) throw new HttpError('Ошибка на стороне сервера!', http, json);
-        this.build = json;
+        this.build = await axios.get(`/api/build/${build}`).then(mustJSON);
       } catch (error) {
         this.error = error;
       }

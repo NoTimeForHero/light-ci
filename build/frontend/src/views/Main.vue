@@ -26,6 +26,9 @@
 </template>
 
 <script>
+import axios from '@/ajax';
+import { mustJSON } from '@/helpers';
+
 export default {
   data() {
     return {
@@ -54,11 +57,11 @@ export default {
       return this.build === id ? 'active' : '';
     },
     async rebuild(project) {
-      const { build } = await fetch(`/api/build/${project}`, { method: 'POST' }).then((x) => x.json());
+      const { build } = await axios.post(`/api/build/${project}`).then(mustJSON);
       await this.$router.push(`/build/${build}`);
     },
     async refresh() {
-      this.projects = await fetch('/api/projects').then((x) => x.json());
+      this.projects = await axios.get('/api/projects').then(mustJSON);
       this.updateTick += 1;
       this.$forceUpdate();
     }

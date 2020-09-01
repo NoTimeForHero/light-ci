@@ -1,3 +1,4 @@
+import { baseURL } from '@/helpers';
 import Vue from 'vue';
 import VueRouter from 'vue-router';
 import Main from '../views/Main.vue';
@@ -37,7 +38,7 @@ const routes = [
 
 const router = new VueRouter({
   mode: 'history',
-  base: process.env.BASE_URL,
+  base: baseURL || process.env.BASE_URL,
   routes
 });
 

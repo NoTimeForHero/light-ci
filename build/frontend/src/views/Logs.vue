@@ -38,6 +38,8 @@
 </template>
 
 <script>
+import axios from '@/ajax';
+import { mustJSON } from '@/helpers';
 import { BUILD_STATUS } from '@/assets/constants';
 import BuildStatus from '../components/BuildStatus.vue';
 import Paginator from '../components/Paginator.vue';
@@ -79,7 +81,7 @@ export default {
     async load() {
       const count = this.buildsPerPage;
       const offset = count * (this.page - 1);
-      const data = await fetch(`/api/logs?count=${count}&offset=${offset}`).then((x) => x.json());
+      const data = await axios.get(`/api/logs?count=${count}&offset=${offset}`).then(mustJSON);
       this.pagesTotal = Math.ceil(data.total / count);
       this.logs = data.logs;
     },

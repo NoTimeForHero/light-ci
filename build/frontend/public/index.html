@@ -1,13 +1,15 @@
 <!DOCTYPE html>
 <html lang="ru">
-  
+
   <head>
-    <title>Light CI</title>    
+    <title>Light CI</title>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width,initial-scale=1.0">
-    <link rel="icon" type="image/png" href="<%= BASE_URL %>favicon.png">
-    <meta name="author" content="NoTimeForHero">    
+    <link rel="icon" type="image/png" href="/favicon.png">
+    <meta name="author" content="NoTimeForHero">
+    <!-- RegEx: window\.__baseURL__\s*=\s*'([^']*)'\s*; -->
+    <script>window.__baseURL__ = '/';</script>
     <title><%= htmlWebpackPlugin.options.title %></title>
   </head>
   <body>
