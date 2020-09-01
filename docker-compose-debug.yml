@@ -7,7 +7,10 @@ services:
       - ${PWD}/build/backend/config.js:/app/config.js:ro      
       - ${PWD}/build/backend/modules:/app/modules:ro
       - ${PWD}/build/backend/index.js:/app/index.js:ro
+      - ${PWD}/build/backend/index.ejs:/app/index.ejs:ro
       - ${PWD}/temp:/app/temp
+    environment: 
+      - BASE_URL=/light-ci/
     ports:
       - 3000:3000
   # # К сожалению, inotify из Windows хоста Docker не передаётся в Linux даже в WSL 2

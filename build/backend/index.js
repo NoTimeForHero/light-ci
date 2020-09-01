@@ -3,11 +3,15 @@ import express from 'express';
 import util from 'util';
 import fs from 'fs';
 import path from 'path';
+import ejs from 'ejs';
 
 import * as builder from './modules/builder.js';
 import security from './modules/security.js';
 import getDatabase from './modules/database.js';
 // import config from './config.js';
+
+const fsReadDir = util.promisify(fs.readdir);
+const ejsRenderFile = util.promisify(ejs.renderFile);
 
 const configPath = fs.existsSync('./config/config.js') ? './config/config.js' : './config.js';
 // Когда ES-Lint начнёт поддерживать top-level await? (>_<)
@@ -15,10 +19,29 @@ export const waitConfig = import(configPath).then((x) => x.default);
 
 // eslint-disable-next-line import/prefer-default-export
 export const dirname = path.resolve();
+
+export const pathStatic = `${dirname}/public`;
+export const baseURL = process.env.BASE_URL || '/';
+export const apiPrefix = 'api/';
+
 const app = express();
 const port = 3000;
 
-if (!fs.existsSync('temp')) fs.mkdirSync('temp');
+const sendEntrypointFile = async (res) => {
+  const addPrefix = (prefix) => (arr) => arr
+    .filter((x) => !x.endsWith('.map'))
+    .map((item) => `${prefix}${item}`);
+  const tplFile = `${dirname}/index.ejs`;
+  const data = {
+    baseURL,
+    styles: await fsReadDir(`${pathStatic}/css`).then(addPrefix(`${baseURL}css/`)),
+    scripts: await fsReadDir(`${pathStatic}/js`).then(addPrefix(`${baseURL}js/`))
+  };
+  const template = await ejsRenderFile(tplFile, data);
+  res.status(200);
+  res.set('Content-Type', 'text/html');
+  res.send(template);
+};
 
 const loadProjects = async (config, err, files) => {
   if (err) {
@@ -49,9 +72,10 @@ app.use(express.json({
   }
 }));
 
-app.use(express.static('public'));
+app.get(baseURL, (_, res) => sendEntrypointFile(res));
+app.use(baseURL, express.static(pathStatic));
 
-builder.registerRoutes(app);
+builder.registerRoutes(app, baseURL + apiPrefix);
 
 const tryBuild = async (req, res, meta) => {
   const { project } = req.params;
@@ -66,11 +90,11 @@ const tryBuild = async (req, res, meta) => {
   res.json({ status: 'ACCEPTED', build });
 };
 
-app.post('/api/build/:project', async (req, res) => {
+app.post(`${baseURL}${apiPrefix}build/:project`, async (req, res) => {
   await tryBuild(req, res);
 });
 
-app.post('/api/webhook/:project', async (req, res) => {
+app.post(`${baseURL}${apiPrefix}webhook/:project`, async (req, res) => {
   const { project } = req.params;
   const config = await waitConfig;
   const validation = security.validateWebhook(req, config.projects[project]);
@@ -82,7 +106,7 @@ app.post('/api/webhook/:project', async (req, res) => {
   await tryBuild(req, res, validation);
 });
 
-app.all('/*', (_, res) => res.sendFile(`${dirname}/public/index.html`));
+app.all(`${baseURL}*`, (_, res) => sendEntrypointFile(res));
 
 app.listen(port, () => {
   console.log(`[CI-Light] Listening at http://localhost:${port}`);
@@ -92,5 +116,6 @@ waitConfig.then(async (config) => {
   console.log(util.inspect(config, { depth: null, colors: true }));
   const database = getDatabase(config.database);
   await builder.initialize(database);
+  if (!fs.existsSync('temp')) fs.mkdirSync('temp');
   fs.readdir('/app/config/', (err, files) => loadProjects(config, err, files));
 });

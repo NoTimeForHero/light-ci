@@ -44,9 +44,9 @@ export function hasProject(project) {
   return scriptMap.has(project);
 }
 
-export function registerRoutes(express) {
+export function registerRoutes(express, baseURL) {
   express.get('/test', (_, res) => res.json({ message: 'Hello world!' }));
-  express.get('/api/build/:id', async (req, res) => {
+  express.get(`${baseURL}build/:id`, async (req, res) => {
     const { id } = req.params;
     let log = cacheLogs[id];
     if (!log) log = await buildStorage.getLog(id);
@@ -57,7 +57,7 @@ export function registerRoutes(express) {
       res.json({ error: 'Объект не найден!', id });
     }
   });
-  express.get('/api/logs', async (req, res) => {
+  express.get(`${baseURL}logs`, async (req, res) => {
     const count = req.query.count ?? 10;
     const offset = req.query.offset ?? 0;
     const dbLogs = await buildStorage.getLogs(count, offset);
@@ -68,7 +68,7 @@ export function registerRoutes(express) {
     });
     res.json({ total: dbLogs.total, logs: filteredLogs });
   });
-  express.get('/api/projects', (_, res) => res.json(buildsLatest));
+  express.get(`${baseURL}projects`, (_, res) => res.json(buildsLatest));
 }
 
 export function getStatus(project) {

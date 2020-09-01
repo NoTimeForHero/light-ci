@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="ru">
+  <head>
+    <title>Light CI</title>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <link rel="icon" type="image/png" href="<%= baseURL %>favicon.png">
+    <meta name="author" content="NoTimeForHero">
+    <script>window.__baseURL__ = '<%= baseURL %>';</script>
+    <title>ligth-ci</title>
+    <!-- PRELOAD -->
+    <% styles.forEach( (style) => { %>
+      <link href="<%= style %>" rel="preload" as="style">
+    <% }); %>
+    <% scripts.forEach( (script) => { %>
+      <link href="<%= script %>" rel="preload" as="script">
+    <% }); %>
+    <!-- STYLES -->
+    <% styles.forEach( (style) => { %>
+      <link href="<%= style %>" rel="stylesheet">
+    <% }); %>    
+  </head>
+  <body>    
+    <noscript>
+      <strong>Для работы приложения "ligth-ci" необходима поддержка JavaScript!</strong>
+    </noscript>
+    <div id="app"></div>
+    <!-- SCRIPTS -->
+    <% scripts.forEach( (script) => { %>
+      <script src="<%= script %>"></script>
+    <% }); %>       
+</html>
