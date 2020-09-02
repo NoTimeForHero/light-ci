@@ -8,18 +8,14 @@ services:
       - ${PWD}/temp:/app/temp
     environment: 
       - BASE_URL=/light-ci/
-      - AUTH_URL=http://localhost:8080/app/login?callback=
+      - AUTH_URL=http://localhost/app/login?callback=
       - SECRET_KEY
-    ports:
-      - 3000:3000
   test-app:
     stop_grace_period: 1s # php -S похоже не хочет слушать SIGTERM, поэтому убиваем его вручную
     build: ./test-app
     environment: 
       - BASE_PATH=/app      
       - SECRET_KEY
-    ports:
-      - 4000:3000
   nginx:
     image: nginx:stable-alpine
     volumes:
