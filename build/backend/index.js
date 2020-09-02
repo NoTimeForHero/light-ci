@@ -4,6 +4,7 @@ import util from 'util';
 import fs from 'fs';
 import path from 'path';
 import ejs from 'ejs';
+import jwt from 'jsonwebtoken';
 
 import * as builder from './modules/builder.js';
 import security from './modules/security.js';
@@ -28,8 +29,7 @@ const getAuthURL = async () => {
   const config = await waitConfig;
   const authURL = config?.authorization?.authUrl;
   if (!authURL) return null;
-  const publicURL = process.env.PUBLIC_URL || `http://localhost:${port}/${baseURL}`;
-  return authURL + encodeURIComponent(publicURL);
+  return authURL;
 };
 
 const app = express();
@@ -85,14 +85,20 @@ app.use(async (req, res, next) => {
   if (!config || config.type === 'disabled') return next();
   const isProtected = req.path.startsWith(baseURL + apiPrefix);
   if (!isProtected) return next();
-  console.log('middleware', isProtected, req.path);
   const showError = (message) => {
     res.status(403);
     res.json({ message, type: 'authorization' });
   };
   const auth = req.get('Authorization');
   if (!auth) return showError('Требуется авторизация!');
-  return next();
+  const [type, token] = auth.split(' ');
+  if (!type || !token || type !== 'Bearer') return showError('Неправильный формат!');
+  try {
+    req.token = jwt.verify(token, config.secret, { alghorithm: config.alghorithm });
+    return next();
+  } catch (err) {
+    return showError(err.message);
+  }
 });
 
 app.get(baseURL, (_, res) => sendEntrypointFile(res));

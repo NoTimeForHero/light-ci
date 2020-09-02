@@ -27,9 +27,12 @@ const routes = [
     ]
   },
   {
-    path: '/login',
+    path: '/login/:redirect?',
     name: 'Login',
-    component: Login
+    component: Login,
+    props: (route) => ({
+      redirect: route.params.redirect || '/'
+    })
   }
   // {
   //   path: '/about',

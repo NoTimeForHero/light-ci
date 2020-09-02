@@ -26,7 +26,8 @@ const authorization = {
 // const authorization = {
 //   type: 'jwt',
 //   secret: 'your_very_secret_key',
-//   authUrl: 'http://example.org:8888/auth?callback='
+//   authUrl: 'http://example.org:8888/auth?callback=',
+//   alghorithm: 'HS256'
 // };
 
 export default {

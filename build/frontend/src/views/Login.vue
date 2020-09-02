@@ -5,7 +5,7 @@
       <p class="card-text">
         Для продолжения работы с системой требуется аутентификация!
       </p>
-      <a :href="authURL" class="btn btn-outline-warning warning-text">Войти</a>
+      <a :href="targetURL" class="btn btn-outline-warning warning-text">Войти</a>
     </div>
   </div>
 </template>
@@ -15,6 +15,15 @@ import { authURL } from '@/helpers';
 
 export default {
   name: 'Login',
+  props: {
+    redirect: String
+  },
+  computed: {
+    targetURL() {
+      const redirect = `${document.location.origin}${this.redirect}?token=`;
+      return this.authURL + encodeURIComponent(redirect);
+    }
+  },
   data() {
     return {
       authURL

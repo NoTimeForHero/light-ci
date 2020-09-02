@@ -17,6 +17,9 @@
             <li class="nav-item" v-for="(id,name) in projects" :key="id">
               <router-link class="nav-link" :class="isActive(id)" :to="`/build/${id}`">{{name}}</router-link>
             </li>
+            <li class="nav-item">
+              <router-link class="nav-link btn-danger" to="/logout">Выйти</router-link>
+            </li>
           </ul>
         </div>
         <div class="row" v-if="projects">
