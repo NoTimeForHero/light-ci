@@ -45,7 +45,6 @@ export function hasProject(project) {
 }
 
 export function registerRoutes(express, baseURL) {
-  express.get('/test', (_, res) => res.json({ message: 'Hello world!' }));
   express.get(`${baseURL}build/:id`, async (req, res) => {
     const { id } = req.params;
     let log = cacheLogs[id];

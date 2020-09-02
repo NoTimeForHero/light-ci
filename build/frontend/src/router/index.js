@@ -2,7 +2,7 @@ import { baseURL } from '@/helpers';
 import Vue from 'vue';
 import VueRouter from 'vue-router';
 import Main from '../views/Main.vue';
-
+import Login from '../views/Login.vue';
 import Build from '../views/Build.vue';
 import Logs from '../views/Logs.vue';
 
@@ -25,6 +25,11 @@ const routes = [
         })
       }
     ]
+  },
+  {
+    path: '/login',
+    name: 'Login',
+    component: Login
   }
   // {
   //   path: '/about',

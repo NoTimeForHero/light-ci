@@ -10,6 +10,7 @@ services:
       - ${PWD}/build/backend/index.ejs:/app/index.ejs:ro
       - ${PWD}/temp:/app/temp
     environment: 
+      - PUBLIC_URL=http://localhost:3000/light-ci/
       - BASE_URL=/light-ci/
     ports:
       - 3000:3000

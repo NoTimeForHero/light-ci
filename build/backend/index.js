@@ -18,14 +18,21 @@ const configPath = fs.existsSync('./config/config.js') ? './config/config.js' : 
 export const waitConfig = import(configPath).then((x) => x.default);
 
 // eslint-disable-next-line import/prefer-default-export
+export const port = 3000;
 export const dirname = path.resolve();
-
 export const pathStatic = `${dirname}/public`;
 export const baseURL = process.env.BASE_URL || '/';
 export const apiPrefix = 'api/';
 
+const getAuthURL = async () => {
+  const config = await waitConfig;
+  const authURL = config?.authorization?.authUrl;
+  if (!authURL) return null;
+  const publicURL = process.env.PUBLIC_URL || `http://localhost:${port}/${baseURL}`;
+  return authURL + encodeURIComponent(publicURL);
+};
+
 const app = express();
-const port = 3000;
 
 const sendEntrypointFile = async (res) => {
   const addPrefix = (prefix) => (arr) => arr
@@ -34,6 +41,7 @@ const sendEntrypointFile = async (res) => {
   const tplFile = `${dirname}/index.ejs`;
   const data = {
     baseURL,
+    authURL: await getAuthURL(),
     styles: await fsReadDir(`${pathStatic}/css`).then(addPrefix(`${baseURL}css/`)),
     scripts: await fsReadDir(`${pathStatic}/js`).then(addPrefix(`${baseURL}js/`))
   };
@@ -71,6 +79,21 @@ app.use(express.json({
     req.rawBody = buf;
   }
 }));
+
+app.use(async (req, res, next) => {
+  const config = await waitConfig.then((x) => x.authorization);
+  if (!config || config.type === 'disabled') return next();
+  const isProtected = req.path.startsWith(baseURL + apiPrefix);
+  if (!isProtected) return next();
+  console.log('middleware', isProtected, req.path);
+  const showError = (message) => {
+    res.status(403);
+    res.json({ message, type: 'authorization' });
+  };
+  const auth = req.get('Authorization');
+  if (!auth) return showError('Требуется авторизация!');
+  return next();
+});
 
 app.get(baseURL, (_, res) => sendEntrypointFile(res));
 app.use(baseURL, express.static(pathStatic));

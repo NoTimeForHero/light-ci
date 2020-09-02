@@ -22,6 +22,13 @@ const authorization = {
   type: 'disabled'
 };
 
+// // Пример JWT авторизации
+// const authorization = {
+//   type: 'jwt',
+//   secret: 'your_very_secret_key',
+//   authUrl: 'http://example.org:8888/auth?callback='
+// };
+
 export default {
   projects, authorization, database
 };

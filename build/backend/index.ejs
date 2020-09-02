@@ -7,7 +7,10 @@
     <meta name="viewport" content="width=device-width,initial-scale=1.0">
     <link rel="icon" type="image/png" href="<%= baseURL %>favicon.png">
     <meta name="author" content="NoTimeForHero">
-    <script>window.__baseURL__ = '<%= baseURL %>';</script>
+    <script>
+        window.__authURL__ = <%- authURL ? `"${authURL}"` : 'null' %>;
+        window.__baseURL__ = '<%= baseURL %>';
+    </script>
     <title>ligth-ci</title>
     <!-- PRELOAD -->
     <% styles.forEach( (style) => { %>

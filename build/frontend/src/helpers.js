@@ -1,5 +1,7 @@
-// eslint-disable-next-line
+/* eslint-disable */
 export const baseURL = global.__baseURL__ || '/';
+export const authURL = global.__authURL__;
+/* eslint-enable */
 
 export const mustJSON = (http) => {
   const { data } = http;
