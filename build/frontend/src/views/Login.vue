@@ -11,7 +11,7 @@
 </template>
 
 <script>
-import { authURL } from '@/helpers';
+import { baseURL, authURL } from '@/helpers';
 
 export default {
   name: 'Login',
@@ -20,7 +20,10 @@ export default {
   },
   computed: {
     targetURL() {
-      const redirect = `${document.location.origin}${this.redirect}?token=`;
+      const { origin } = document.location;
+      // Удаляем все дублирующиеся слэши из URL
+      const url = `/${baseURL}${this.redirect}?token=`.replaceAll(/\/{2,}/g, '/');
+      const redirect = origin + url;
       return this.authURL + encodeURIComponent(redirect);
     }
   },

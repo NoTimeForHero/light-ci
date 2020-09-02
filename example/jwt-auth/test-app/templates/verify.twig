@@ -1,0 +1,33 @@
+{% extends "page.twig" %}
+{% block title %}Аутентификация{% endblock %}
+{% block content %}
+<div class="container">
+  <div class="row mt-4">
+    <div class="col-md-6 mx-auto">
+      <form method="{{method|default('POST')}}" action="{{action|default('VERIFY')}}" >
+        <div class="card z-depth-0">
+          <div class="card-body text-center">
+          <h3 class="card-title">Запрос доступа</h3>
+          <p>Сервису Light CI будут доступны следующие данные: </p>
+
+          {% for key, value in params %}
+            <input type="hidden" name="{{key}}" value="{{value}}" />
+          {% endfor %}
+
+          <ul class="list-group">
+            <li class="list-group-item">Имя пользователя</li>
+            <li class="list-group-item">Электронная почта</li>
+            <li class="list-group-item">Права доступа</li>
+          </ul>
+
+          <div class="card-foter mt-3">
+            <button type="submit" class="btn btn-primary" style="width: 140px;">Разрешить</button>
+            <button type="button" class="btn btn-secondary" style="width: 140px;" onclick="history.back();">Отмена</button>
+          </div>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

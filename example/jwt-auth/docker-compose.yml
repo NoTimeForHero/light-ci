@@ -1,0 +1,28 @@
+version: "3.8"
+services:
+  light-ci:
+    image: notimeforhero/light-ci    
+    init: true # Так как приложение может спавнить BASH скрипты    
+    volumes:
+      - ${PWD}/configs/light-ci:/app/config:ro
+      - ${PWD}/temp:/app/temp
+    environment: 
+      - BASE_URL=/light-ci/
+      - AUTH_URL=http://localhost:8080/app/login?callback=
+      - SECRET_KEY
+    ports:
+      - 3000:3000
+  test-app:
+    stop_grace_period: 1s # php -S похоже не хочет слушать SIGTERM, поэтому убиваем его вручную
+    build: ./test-app
+    environment: 
+      - BASE_PATH=/app      
+      - SECRET_KEY
+    ports:
+      - 4000:3000
+  nginx:
+    image: nginx:stable-alpine
+    volumes:
+      - ${PWD}/configs/nginx:/etc/nginx/conf.d
+    ports:
+      - 80:80

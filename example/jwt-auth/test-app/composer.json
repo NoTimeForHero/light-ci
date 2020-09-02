@@ -1,0 +1,11 @@
+{
+    "name": "notimeforhero/light-ci-jwt-example",
+    "type": "project",
+    "require": {
+        "slim/slim": "^4.5",
+        "slim/psr7": "^1.2",
+        "lcobucci/jwt": "^3.3",
+        "twig/twig": "^3.0"
+    },
+    "license": "MIT"
+}
