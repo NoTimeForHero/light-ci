@@ -120,7 +120,11 @@ const tryBuild = async (req, res, meta) => {
 };
 
 app.post(`${baseURL}${apiPrefix}build/:project`, async (req, res) => {
-  await tryBuild(req, res);
+  let meta = null;
+  const subject = req.token.username;
+  const { email } = req.token.email;
+  if (subject) meta = { verified: { subject, email, company: false } };
+  await tryBuild(req, res, meta);
 });
 
 app.post(`${baseURL}${apiPrefix}webhook/:project`, async (req, res) => {

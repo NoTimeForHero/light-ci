@@ -17,7 +17,7 @@
             <li class="nav-item" v-for="(id,name) in projects" :key="id">
               <router-link class="nav-link" :class="isActive(id)" :to="`/build/${id}`">{{name}}</router-link>
             </li>
-            <li class="nav-item">
+            <li class="nav-item" v-if="isAuthorized">
               <router-link class="nav-link btn-danger" to="/logout">Выйти</router-link>
             </li>
           </ul>
@@ -30,7 +30,7 @@
 
 <script>
 import axios from '@/ajax';
-import { mustJSON } from '@/helpers';
+import { isAuthorized, mustJSON } from '@/helpers';
 
 export default {
   data() {
@@ -53,6 +53,9 @@ export default {
   computed: {
     build() {
       return this.$route.params.build;
+    },
+    isAuthorized() {
+      return isAuthorized();
     }
   },
   methods: {
@@ -70,6 +73,7 @@ export default {
     }
   },
   async mounted() {
+    console.log(this.$isAuthorized);
     await this.refresh();
     this.isLoading = false;
     this.page = 'build';
